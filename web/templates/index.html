@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WorldArchive</title>
+
+    <link href="{{ url_for('static', path='/index.css') }}" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+</head>
+<body>
+    <script src="https://unpkg.com/magic-grid/dist/magic-grid.min.js"></script>
+
+    <div class="container">
+        {% for server in metadata %}
+        <div class="server_item">
+            <div class="bg" style="background-image: url('content/{{ server.image }}');"></div>
+
+            <div class="text">
+                <h1>{{ server.name }}</h1>
+                <h3>{{ server.date_range }}</h3>
+            </div>
+
+            {% if "world" in server %}
+            <div class="bottom_bar">
+                <h4 style="margin-top: 28px; margin-left: 30px">{{ server.version }}</h4>
+
+                {% if "mods" in server %}
+                <a class="material-symbols-outlined" style="margin-left: 110px; margin-bottom: 5px;" href="content/{{ server.mods }}" download="{{ server.name }}-mods.zip">widgets</a>
+                <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="content/{{ server.world }}" download="{{ server.name }}.zip">download</a>
+                <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="map/#{{ server.map_name }}:0:0:0:1500:0:0:0:0:perspective">map</a>
+                {% else %}
+                <a class="material-symbols-outlined" style="margin-left: 145px; margin-bottom: 5px" href="content/{{ server.world }}" download="{{ server.name }}.zip">download</a>
+                <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="map/#{{ server.map_name }}:0:0:0:1500:0:0:0:0:perspective">map</a>
+                {% endif %}
+
+            </div>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        let magicGrid = new MagicGrid({
+          container: '.container',
+          animate: true,
+          static: true,
+          useMin: true
+        });
+
+        magicGrid.listen();
+    </script>
+</body>
+</html>
