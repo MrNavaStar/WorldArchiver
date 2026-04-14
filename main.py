@@ -14,6 +14,9 @@ from starlette.templating import Jinja2Templates
 from bluemap import BlueMap
 
 metadata = []
+server_dir = "/worlds"
+port = int(os.getenv("PORT", "80"))
+
 app = FastAPI()
 templates = Jinja2Templates(directory="web/templates")
 
@@ -31,7 +34,10 @@ async def index(request: Request):
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     if "tiles" in request.url.path and ".json" in request.url.path and "gz" not in request.url.path:
-        return FileResponse(headers={"Content-Encoding": "gzip", "Content-Type": "application/json"}, path=f"/home/ethan/Documents/Minecraft/server-archive/bluemap/web{request.url.path.replace('/map', '', 1)}.gz")
+        return FileResponse(
+            headers={"Content-Encoding": "gzip", "Content-Type": "application/json"},
+            path=f"{server_dir}/bluemap/web{request.url.path.replace('/map', '', 1)}.gz"
+        )
 
     response = await call_next(request)
     return response
@@ -94,8 +100,6 @@ def initBlueMap(dir: str) -> BlueMap:
 
 
 if __name__ == '__main__':
-    server_dir = "/home/ethan/Documents/Minecraft/server-archive"
-
     metadata = getMetaData(server_dir)
     bmap = initBlueMap(server_dir)
 
@@ -104,4 +108,4 @@ if __name__ == '__main__':
     app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
 
     bmap.render()
-    uvicorn.run(app, host="0.0.0.0", port=2002)
+    uvicorn.run(app, host="0.0.0.0", port=port)

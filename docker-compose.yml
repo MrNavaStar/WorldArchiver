@@ -1,0 +1,11 @@
+services:
+  worldarchiver:
+    build: .
+    container_name: worldarchiver
+    ports:
+      - "80:80"
+    environment:
+      PORT: 80
+    volumes:
+      - ./worlds:/worlds
+    restart: unless-stopped
