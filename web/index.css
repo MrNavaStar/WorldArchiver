@@ -1,5 +1,5 @@
 body {
-  background: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('https://cdn.wallpapersafari.com/51/96/eslq2G.jpg');
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.wallpapersafari.com/51/96/eslq2G.jpg');
   font-family: 'Minecraft', sans-serif;
   background-size: 50px 50px;
 }
@@ -20,6 +20,7 @@ a {
   width: 300px;
   height: 300px;
   border-radius: 20px;
+  border: none;
 }
 
 .server_item:hover .bg,
@@ -53,7 +54,8 @@ a {
   position: fixed;
 }
 
-.server_item .text h1, h3 {
+.server_item .text h1,
+.server_item .text h3 {
   width: 100%;
   align-self: center;
   margin: 10px;
@@ -69,10 +71,129 @@ a {
   width: 100%;
   position: fixed;
   align-self: flex-end;
-  background-color:rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   border-bottom-right-radius: 20px;
   border-bottom-left-radius: 20px;
 
   transform: translateY(100%);
   transition: all .3s;
+}
+
+.upload_item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+  color: white;
+  cursor: pointer;
+  transition: transform .3s, background-color .3s, border-color .3s;
+}
+
+.upload_item:hover,
+.upload_item:focus {
+  transform: scale(1.03);
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.upload_item .material-symbols-outlined {
+  font-size: 72px;
+}
+
+.upload_item p {
+  margin: 8px 0 0;
+  font-size: 22px;
+}
+
+.upload_modal_overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+}
+
+.upload_modal_overlay.open {
+  display: flex;
+}
+
+.upload_modal {
+  width: min(640px, 92vw);
+  max-height: 92vh;
+  overflow: auto;
+  border-radius: 16px;
+  background: #16181f;
+  color: #f4f7fc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  padding: 24px;
+}
+
+.upload_modal_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.upload_modal_header h2 {
+  margin: 0;
+}
+
+.modal_close {
+  border: none;
+  background: transparent;
+  color: #f4f7fc;
+  cursor: pointer;
+}
+
+.upload_form {
+  display: grid;
+  gap: 14px;
+}
+
+.upload_form label {
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.upload_form input,
+.upload_form textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #0d0f14;
+  color: #f4f7fc;
+  padding: 10px;
+  font-family: inherit;
+}
+
+.form_actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.form_actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.form_actions .secondary {
+  background: #343845;
+  color: #f4f7fc;
+}
+
+.form_actions button[type="submit"] {
+  background: #4b8cff;
+  color: white;
 }
