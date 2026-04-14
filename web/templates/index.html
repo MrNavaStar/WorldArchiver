@@ -39,10 +39,63 @@
 
         </div>
         {% endfor %}
+
+        <button class="server_item upload_item" id="open-upload-modal" type="button" aria-label="Upload new world">
+            <span class="material-symbols-outlined">add</span>
+            <p>Upload World</p>
+        </button>
+    </div>
+
+    <div class="upload_modal_overlay" id="upload-modal-overlay" aria-hidden="true">
+        <div class="upload_modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+            <div class="upload_modal_header">
+                <h2 id="upload-modal-title">Upload World</h2>
+                <button type="button" id="close-upload-modal" class="modal_close" aria-label="Close upload dialog">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form class="upload_form" method="post" action="/upload" enctype="multipart/form-data">
+                <label>
+                    World Name
+                    <input name="name" type="text" required placeholder="e.g. Survival SMP">
+                </label>
+
+                <label>
+                    Date Range
+                    <input name="date_range" type="text" required placeholder="e.g. Jan 2024 - Oct 2024">
+                </label>
+
+                <label>
+                    Description
+                    <textarea name="description" rows="3" placeholder="Short summary for info.json"></textarea>
+                </label>
+
+                <label>
+                    World ZIP
+                    <input name="world_zip" type="file" accept=".zip" required>
+                </label>
+
+                <label>
+                    Mods ZIP (optional)
+                    <input name="mods_zip" type="file" accept=".zip">
+                </label>
+
+                <label>
+                    Images
+                    <input name="images" type="file" accept="image/*" multiple>
+                </label>
+
+                <div class="form_actions">
+                    <button type="button" class="secondary" id="cancel-upload-modal">Cancel</button>
+                    <button type="submit">Save Upload</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-        let magicGrid = new MagicGrid({
+        const magicGrid = new MagicGrid({
           container: '.container',
           animate: true,
           static: true,
@@ -50,6 +103,37 @@
         });
 
         magicGrid.listen();
+
+        const uploadOverlay = document.getElementById('upload-modal-overlay');
+        const openUploadButton = document.getElementById('open-upload-modal');
+        const closeUploadButton = document.getElementById('close-upload-modal');
+        const cancelUploadButton = document.getElementById('cancel-upload-modal');
+
+        function closeUploadModal() {
+            uploadOverlay.classList.remove('open');
+            uploadOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function openUploadModal() {
+            uploadOverlay.classList.add('open');
+            uploadOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        openUploadButton.addEventListener('click', openUploadModal);
+        closeUploadButton.addEventListener('click', closeUploadModal);
+        cancelUploadButton.addEventListener('click', closeUploadModal);
+
+        uploadOverlay.addEventListener('click', function (event) {
+            if (event.target === uploadOverlay) {
+                closeUploadModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeUploadModal();
+            }
+        });
     </script>
 </body>
 </html>

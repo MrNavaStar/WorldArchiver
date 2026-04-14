@@ -1,13 +1,15 @@
 import json
 import os
 import random
+import re
+import shutil
 from zipfile import ZipFile
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form, UploadFile
 from nbt import nbt
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, FileResponse
+from starlette.responses import HTMLResponse, FileResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
@@ -16,6 +18,7 @@ from bluemap import BlueMap
 metadata = []
 server_dir = "/worlds"
 port = int(os.getenv("PORT", "80"))
+bmap = None
 
 app = FastAPI()
 templates = Jinja2Templates(directory="web/templates")
@@ -97,6 +100,80 @@ def initBlueMap(dir: str) -> BlueMap:
             bmap.addMods(f"{dir}/{server['mods']}")
 
     return bmap
+
+
+def slugify_name(name: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", name.strip().lower()).strip("-")
+    return cleaned or "world"
+
+
+def create_world_folder(name: str) -> str:
+    slug = slugify_name(name)
+    candidate = slug
+    suffix = 1
+
+    while os.path.exists(f"{server_dir}/{candidate}"):
+        suffix += 1
+        candidate = f"{slug}-{suffix}"
+
+    os.makedirs(f"{server_dir}/{candidate}", exist_ok=False)
+    return candidate
+
+
+def save_upload_file(path: str, uploaded_file: UploadFile):
+    with open(path, "wb") as destination:
+        shutil.copyfileobj(uploaded_file.file, destination)
+
+
+@app.post("/upload")
+async def upload_world(
+    name: str = Form(...),
+    date_range: str = Form(...),
+    description: str = Form(""),
+    world_zip: UploadFile = File(...),
+    mods_zip: UploadFile | None = File(None),
+    images: list[UploadFile] | None = File(None)
+):
+    global metadata
+    global bmap
+
+    folder_name = create_world_folder(name)
+    world_path = f"{server_dir}/{folder_name}"
+    images_path = f"{world_path}/images"
+    os.makedirs(images_path, exist_ok=True)
+
+    info = {
+        "name": name.strip(),
+        "date_range": date_range.strip(),
+        "description": description.strip()
+    }
+    with open(f"{world_path}/info.json", "w") as info_file:
+        json.dump(info, info_file, indent=2)
+
+    world_zip_name = "world.zip"
+    save_upload_file(f"{world_path}/{world_zip_name}", world_zip)
+    await world_zip.close()
+
+    if mods_zip is not None and mods_zip.filename:
+        save_upload_file(f"{world_path}/mods.zip", mods_zip)
+        await mods_zip.close()
+
+    if images:
+        for image in images:
+            if not image.filename:
+                continue
+
+            safe_image_name = os.path.basename(image.filename)
+            save_upload_file(f"{images_path}/{safe_image_name}", image)
+            await image.close()
+
+    metadata = getMetaData(server_dir)
+
+    if bmap is not None:
+        bmap = initBlueMap(server_dir)
+        bmap.render()
+
+    return RedirectResponse("/", status_code=303)
 
 
 if __name__ == '__main__':
