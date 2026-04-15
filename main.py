@@ -31,7 +31,7 @@ async def index(request: Request):
         server = metadata[i]
         new_meta[i]["image"] = random.choice(server["images"])
 
-    return templates.TemplateResponse("index.html", {"request": request, "metadata": new_meta})
+    return templates.TemplateResponse(request, "index.html", {"metadata": new_meta})
 
 
 @app.middleware("http")
