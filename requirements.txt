@@ -3,3 +3,5 @@ uvicorn[standard]
 NBT
 requests
 jinja2
+authlib
+itsdangerous

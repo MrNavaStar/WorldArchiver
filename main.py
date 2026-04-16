@@ -7,8 +7,11 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import uvicorn
+from authlib.integrations.starlette_client import OAuth
 from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import PlainTextResponse
 from nbt import nbt
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, FileResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
@@ -20,12 +23,35 @@ metadata = []
 server_dir = "/worlds"
 port = int(os.getenv("PORT", "80"))
 bmap = None
+session_secret = os.getenv("SESSION_SECRET")
+oidc_enabled = bool(
+    session_secret
+    and os.getenv("OIDC_CLIENT_ID")
+    and os.getenv("OIDC_CLIENT_SECRET")
+    and os.getenv("OIDC_DISCOVERY_URL")
+)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="web/templates")
 app.mount("/static", StaticFiles(directory="web"), name="static")
 app.mount("/content", StaticFiles(directory=server_dir), name="content")
 app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
+if session_secret:
+    app.add_middleware(SessionMiddleware, secret_key=session_secret)
+
+oauth = OAuth()
+if oidc_enabled:
+    oauth.register(
+        name="oidc",
+        client_id=os.getenv("OIDC_CLIENT_ID"),
+        client_secret=os.getenv("OIDC_CLIENT_SECRET"),
+        server_metadata_url=os.getenv("OIDC_DISCOVERY_URL"),
+        client_kwargs={"scope": os.getenv("OIDC_SCOPES", "openid profile email")}
+    )
+
+
+def get_user(request: Request) -> dict | None:
+    return request.session.get("user", None)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -35,7 +61,46 @@ async def index(request: Request):
         server = metadata[i]
         new_meta[i]["image"] = random.choice(server["images"])
 
-    return templates.TemplateResponse(request, "index.html", {"metadata": new_meta})
+    user = get_user(request) if session_secret else None
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "metadata": new_meta,
+            "auth_enabled": oidc_enabled,
+            "is_authenticated": user is not None,
+            "user": user
+        }
+    )
+
+
+@app.get("/login")
+async def login(request: Request):
+    if not oidc_enabled:
+        return PlainTextResponse("OIDC login is not configured.", status_code=503)
+
+    redirect_uri = request.url_for("auth_callback")
+    return await oauth.oidc.authorize_redirect(request, str(redirect_uri))
+
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request):
+    if not oidc_enabled:
+        return PlainTextResponse("OIDC login is not configured.", status_code=503)
+
+    token = await oauth.oidc.authorize_access_token(request)
+    user_info = token.get("userinfo")
+    if not user_info:
+        user_info = await oauth.oidc.userinfo(token=token)
+    request.session["user"] = dict(user_info)
+    return RedirectResponse("/", status_code=303)
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    if session_secret:
+        request.session.pop("user", None)
+    return RedirectResponse("/", status_code=303)
 
 
 @app.middleware("http")
@@ -152,6 +217,7 @@ def format_date_range(start_date: str, end_date: str, fallback: str) -> str:
 
 @app.post("/upload")
 async def upload_world(
+    request: Request,
     name: str = Form(...),
     date_start: str = Form(""),
     date_end: str = Form(""),
@@ -163,6 +229,9 @@ async def upload_world(
 ):
     global metadata
     global bmap
+    user = get_user(request) if session_secret else None
+    if user is None:
+        return PlainTextResponse("Authentication required.", status_code=403)
 
     folder_name = create_world_folder(name)
     world_path = f"{server_dir}/{folder_name}"
