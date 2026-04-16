@@ -128,8 +128,9 @@ a {
   max-height: 92vh;
   overflow: auto;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(16, 19, 30, 0.58);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  backdrop-filter: blur(14px) saturate(125%);
   color: #f4f7fc;
   border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
@@ -168,6 +169,7 @@ a {
 .upload_form input,
 .upload_form textarea {
   width: 100%;
+  box-sizing: border-box;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.45);
