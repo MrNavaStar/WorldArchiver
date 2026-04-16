@@ -2,6 +2,7 @@ body {
   background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.wallpapersafari.com/51/96/eslq2G.jpg');
   font-family: 'Minecraft', sans-serif;
   background-size: 50px 50px;
+  margin: 0;
 }
 
 a {
@@ -10,6 +11,51 @@ a {
 
 .container {
   margin-top: 80px;
+}
+
+.top_menu {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 120;
+}
+
+.menu_toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.menu_panel {
+  margin-top: 10px;
+  min-width: 180px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 12px;
+  display: none;
+}
+
+.menu_panel.open {
+  display: block;
+}
+
+.menu_user {
+  margin: 0 0 8px 0;
+  color: #fff;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.menu_link {
+  display: inline-block;
 }
 
 .server_item {

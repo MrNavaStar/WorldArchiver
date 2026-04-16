@@ -32,6 +32,18 @@ docker run --rm \
 
 Then open: <http://localhost>
 
+### OIDC authentication for uploads
+
+Uploading worlds is now restricted to authenticated users. Configure OIDC and session settings to enable sign-in:
+
+- `SESSION_SECRET`: secret key used to sign session cookies.
+- `OIDC_CLIENT_ID`: OIDC client ID.
+- `OIDC_CLIENT_SECRET`: OIDC client secret.
+- `OIDC_DISCOVERY_URL`: provider discovery URL, for example `https://accounts.google.com/.well-known/openid-configuration`.
+- `OIDC_SCOPES` (optional): defaults to `openid profile email`.
+
+If OIDC is configured, the home page shows a **Sign in** link and only logged-in users will see the **Upload World** button. Direct `POST /upload` requests from unauthenticated users return `403 Authentication required`.
+
 
 ### Expected `/worlds` folder structure
 

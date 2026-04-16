@@ -11,6 +11,24 @@
 <body>
     <script src="https://unpkg.com/magic-grid/dist/magic-grid.min.js"></script>
 
+    <div class="top_menu">
+        <button class="menu_toggle" id="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Open menu">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="menu_panel" id="menu-panel" aria-hidden="true">
+            {% if auth_enabled %}
+                {% if is_authenticated %}
+                <p class="menu_user">Logged in{% if user and user.get("email") %} as {{ user.get("email") }}{% endif %}</p>
+                <a class="menu_link" href="/logout">Logout</a>
+                {% else %}
+                <a class="menu_link" href="/login">Login</a>
+                {% endif %}
+            {% else %}
+            <p class="menu_user">Login unavailable</p>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="container">
         {% for server in metadata %}
         <div class="server_item">
@@ -40,12 +58,15 @@
         </div>
         {% endfor %}
 
+        {% if is_authenticated %}
         <button class="server_item upload_item" id="open-upload-modal" type="button" aria-label="Upload new world">
             <span class="material-symbols-outlined">add</span>
             <p>Upload World</p>
         </button>
+        {% endif %}
     </div>
 
+    {% if is_authenticated %}
     <div class="upload_modal_overlay" id="upload-modal-overlay" aria-hidden="true">
         <div class="upload_modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
             <div class="upload_modal_header">
@@ -97,6 +118,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <script>
         const magicGrid = new MagicGrid({
@@ -112,30 +134,65 @@
         const openUploadButton = document.getElementById('open-upload-modal');
         const closeUploadButton = document.getElementById('close-upload-modal');
         const cancelUploadButton = document.getElementById('cancel-upload-modal');
+        const menuToggle = document.getElementById('menu-toggle');
+        const menuPanel = document.getElementById('menu-panel');
 
         function closeUploadModal() {
+            if (!uploadOverlay) {
+                return;
+            }
             uploadOverlay.classList.remove('open');
             uploadOverlay.setAttribute('aria-hidden', 'true');
         }
 
         function openUploadModal() {
+            if (!uploadOverlay) {
+                return;
+            }
             uploadOverlay.classList.add('open');
             uploadOverlay.setAttribute('aria-hidden', 'false');
         }
 
-        openUploadButton.addEventListener('click', openUploadModal);
-        closeUploadButton.addEventListener('click', closeUploadModal);
-        cancelUploadButton.addEventListener('click', closeUploadModal);
+        if (openUploadButton && closeUploadButton && cancelUploadButton && uploadOverlay) {
+            openUploadButton.addEventListener('click', openUploadModal);
+            closeUploadButton.addEventListener('click', closeUploadModal);
+            cancelUploadButton.addEventListener('click', closeUploadModal);
 
-        uploadOverlay.addEventListener('click', function (event) {
-            if (event.target === uploadOverlay) {
-                closeUploadModal();
-            }
-        });
+            uploadOverlay.addEventListener('click', function (event) {
+                if (event.target === uploadOverlay) {
+                    closeUploadModal();
+                }
+            });
+        }
+
+        if (menuToggle && menuPanel) {
+            menuToggle.addEventListener('click', function () {
+                const isOpen = menuPanel.classList.toggle('open');
+                menuPanel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+                menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!menuPanel.classList.contains('open')) {
+                    return;
+                }
+
+                if (!menuPanel.contains(event.target) && event.target !== menuToggle && !menuToggle.contains(event.target)) {
+                    menuPanel.classList.remove('open');
+                    menuPanel.setAttribute('aria-hidden', 'true');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeUploadModal();
+                if (menuPanel && menuToggle) {
+                    menuPanel.classList.remove('open');
+                    menuPanel.setAttribute('aria-hidden', 'true');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                }
             }
         });
     </script>
