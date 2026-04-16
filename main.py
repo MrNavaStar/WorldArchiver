@@ -33,9 +33,6 @@ oidc_enabled = bool(
 
 app = FastAPI()
 templates = Jinja2Templates(directory="web/templates")
-app.mount("/static", StaticFiles(directory="web"), name="static")
-app.mount("/content", StaticFiles(directory=server_dir), name="content")
-app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
 if session_secret:
     app.add_middleware(SessionMiddleware, secret_key=session_secret)
 
@@ -276,6 +273,10 @@ async def upload_world(
 if __name__ == '__main__':
     metadata = getMetaData(server_dir)
     bmap = initBlueMap(server_dir)
+
+    app.mount("/static", StaticFiles(directory="web"), name="static")
+    app.mount("/content", StaticFiles(directory=server_dir), name="content")
+    app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
 
     bmap.render()
     uvicorn.run(app, host="0.0.0.0", port=port)
