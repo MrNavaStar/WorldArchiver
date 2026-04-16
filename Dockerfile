@@ -1,19 +1,12 @@
-FROM eclipse-temurin:25-jdk
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-pip python3-venv ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt ./
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN apt-get update && apt-get install -y openjdk-25-jdk && rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
 COPY . .
-
-ENV PORT=80
 
 CMD ["python3", "main.py"]
