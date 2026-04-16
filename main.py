@@ -3,6 +3,7 @@ import os
 import random
 import re
 import shutil
+from datetime import datetime
 from zipfile import ZipFile
 
 import uvicorn
@@ -22,6 +23,9 @@ bmap = None
 
 app = FastAPI()
 templates = Jinja2Templates(directory="web/templates")
+app.mount("/static", StaticFiles(directory="web"), name="static")
+app.mount("/content", StaticFiles(directory=server_dir), name="content")
+app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -125,10 +129,33 @@ def save_upload_file(path: str, uploaded_file: UploadFile):
         shutil.copyfileobj(uploaded_file.file, destination)
 
 
+def format_date_range(start_date: str, end_date: str, fallback: str) -> str:
+    if fallback.strip():
+        return fallback.strip()
+
+    if not start_date and not end_date:
+        return ""
+
+    def to_display(value: str) -> str:
+        if not value:
+            return ""
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%b %d, %Y")
+
+    start_display = to_display(start_date)
+    end_display = to_display(end_date)
+
+    if start_display and end_display:
+        return f"{start_display} - {end_display}"
+
+    return start_display or end_display
+
+
 @app.post("/upload")
 async def upload_world(
     name: str = Form(...),
-    date_range: str = Form(...),
+    date_start: str = Form(""),
+    date_end: str = Form(""),
+    date_range: str = Form(""),
     description: str = Form(""),
     world_zip: UploadFile = File(...),
     mods_zip: UploadFile | None = File(None),
@@ -144,7 +171,7 @@ async def upload_world(
 
     info = {
         "name": name.strip(),
-        "date_range": date_range.strip(),
+        "date_range": format_date_range(date_start.strip(), date_end.strip(), date_range),
         "description": description.strip()
     }
     with open(f"{world_path}/info.json", "w") as info_file:
@@ -179,10 +206,6 @@ async def upload_world(
 if __name__ == '__main__':
     metadata = getMetaData(server_dir)
     bmap = initBlueMap(server_dir)
-
-    app.mount("/static", StaticFiles(directory="web"), name="static")
-    app.mount("/content", StaticFiles(directory=server_dir), name="content")
-    app.mount("/map", StaticFiles(directory=f"{server_dir}/bluemap/web", html=True), name="map")
 
     bmap.render()
     uvicorn.run(app, host="0.0.0.0", port=port)

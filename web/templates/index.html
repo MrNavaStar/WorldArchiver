@@ -63,7 +63,11 @@
 
                 <label>
                     Date Range
-                    <input name="date_range" type="text" required placeholder="e.g. Jan 2024 - Oct 2024">
+                    <div class="date_range_inputs">
+                        <input name="date_start" type="date" required>
+                        <span>to</span>
+                        <input name="date_end" type="date" required>
+                    </div>
                 </label>
 
                 <label>
