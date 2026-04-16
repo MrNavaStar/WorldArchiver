@@ -31,7 +31,15 @@
 
     <div class="container">
         {% for server in metadata %}
-        <div class="server_item">
+        <div
+            class="server_item {% if 'world' in server %}map_clickable{% endif %}"
+            {% if "world" in server %}
+            data-map-url="map/#{{ server.map_name }}:0:0:0:1500:0:0:0:0:perspective"
+            role="button"
+            tabindex="0"
+            aria-label="Open map for {{ server.name }}"
+            {% endif %}
+        >
             <div class="bg" style="background-image: url('content/{{ server.image }}');"></div>
 
             <div class="text">
@@ -46,10 +54,28 @@
                 {% if "mods" in server %}
                 <a class="material-symbols-outlined" style="margin-left: 110px; margin-bottom: 5px;" href="content/{{ server.mods }}" download="{{ server.name }}-mods.zip">widgets</a>
                 <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="content/{{ server.world }}" download="{{ server.name }}.zip">download</a>
-                <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="map/#{{ server.map_name }}:0:0:0:1500:0:0:0:0:perspective">map</a>
+                {% if "images" in server and server.images|length > 0 %}
+                <button
+                    class="material-symbols-outlined gallery_button"
+                    style="margin-left: 10px; margin-bottom: 5px"
+                    type="button"
+                    data-server-name="{{ server.name }}"
+                    data-images='{{ server.images | tojson }}'
+                    aria-label="View photos for {{ server.name }}"
+                >photo_library</button>
+                {% endif %}
                 {% else %}
                 <a class="material-symbols-outlined" style="margin-left: 145px; margin-bottom: 5px" href="content/{{ server.world }}" download="{{ server.name }}.zip">download</a>
-                <a class="material-symbols-outlined" style="margin-left: 10px; margin-bottom: 5px" href="map/#{{ server.map_name }}:0:0:0:1500:0:0:0:0:perspective">map</a>
+                {% if "images" in server and server.images|length > 0 %}
+                <button
+                    class="material-symbols-outlined gallery_button"
+                    style="margin-left: 10px; margin-bottom: 5px"
+                    type="button"
+                    data-server-name="{{ server.name }}"
+                    data-images='{{ server.images | tojson }}'
+                    aria-label="View photos for {{ server.name }}"
+                >photo_library</button>
+                {% endif %}
                 {% endif %}
 
             </div>
@@ -120,6 +146,28 @@
     </div>
     {% endif %}
 
+    <div class="gallery_modal_overlay" id="gallery-modal-overlay" aria-hidden="true">
+        <div class="gallery_modal" role="dialog" aria-modal="true" aria-labelledby="gallery-modal-title">
+            <div class="gallery_modal_header">
+                <h2 id="gallery-modal-title">Photos</h2>
+                <button type="button" id="close-gallery-modal" class="modal_close" aria-label="Close photos dialog">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="gallery_stage">
+                <button type="button" id="gallery-prev" class="gallery_nav" aria-label="Previous photo">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <img id="gallery-image" alt="">
+                <button type="button" id="gallery-next" class="gallery_nav" aria-label="Next photo">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+            <p id="gallery-counter"></p>
+        </div>
+    </div>
+
     <script>
         const magicGrid = new MagicGrid({
           container: '.container',
@@ -136,6 +184,18 @@
         const cancelUploadButton = document.getElementById('cancel-upload-modal');
         const menuToggle = document.getElementById('menu-toggle');
         const menuPanel = document.getElementById('menu-panel');
+        const galleryOverlay = document.getElementById('gallery-modal-overlay');
+        const galleryCloseButton = document.getElementById('close-gallery-modal');
+        const galleryPrevButton = document.getElementById('gallery-prev');
+        const galleryNextButton = document.getElementById('gallery-next');
+        const galleryImage = document.getElementById('gallery-image');
+        const galleryCounter = document.getElementById('gallery-counter');
+        const galleryTitle = document.getElementById('gallery-modal-title');
+        const galleryButtons = document.querySelectorAll('.gallery_button');
+        const mapCards = document.querySelectorAll('.map_clickable');
+        let galleryImages = [];
+        let galleryIndex = 0;
+        let galleryServerName = '';
 
         function closeUploadModal() {
             if (!uploadOverlay) {
@@ -185,9 +245,105 @@
             });
         }
 
+        function renderGallery() {
+            if (!galleryImage || !galleryCounter || galleryImages.length === 0) {
+                return;
+            }
+
+            const imagePath = galleryImages[galleryIndex];
+            galleryImage.src = `content/${imagePath}`;
+            galleryImage.alt = `${galleryServerName} photo ${galleryIndex + 1}`;
+            galleryCounter.textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
+            if (galleryTitle) {
+                galleryTitle.textContent = `${galleryServerName} Photos`;
+            }
+        }
+
+        function closeGalleryModal() {
+            if (!galleryOverlay) {
+                return;
+            }
+            galleryOverlay.classList.remove('open');
+            galleryOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function openGalleryModal(images, serverName) {
+            if (!galleryOverlay || !images || images.length === 0) {
+                return;
+            }
+
+            galleryImages = images;
+            galleryIndex = 0;
+            galleryServerName = serverName;
+            renderGallery();
+            galleryOverlay.classList.add('open');
+            galleryOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        if (galleryButtons.length > 0 && galleryOverlay && galleryCloseButton && galleryPrevButton && galleryNextButton) {
+            galleryButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    const imageData = JSON.parse(button.dataset.images || '[]');
+                    const serverName = button.dataset.serverName || 'Server';
+                    openGalleryModal(imageData, serverName);
+                });
+            });
+
+            galleryCloseButton.addEventListener('click', closeGalleryModal);
+            galleryPrevButton.addEventListener('click', function () {
+                if (galleryImages.length === 0) {
+                    return;
+                }
+                galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length;
+                renderGallery();
+            });
+            galleryNextButton.addEventListener('click', function () {
+                if (galleryImages.length === 0) {
+                    return;
+                }
+                galleryIndex = (galleryIndex + 1) % galleryImages.length;
+                renderGallery();
+            });
+
+            galleryOverlay.addEventListener('click', function (event) {
+                if (event.target === galleryOverlay) {
+                    closeGalleryModal();
+                }
+            });
+        }
+
+        if (mapCards.length > 0) {
+            mapCards.forEach(function (card) {
+                const mapUrl = card.dataset.mapUrl;
+                if (!mapUrl) {
+                    return;
+                }
+
+                const openMap = function () {
+                    window.location.href = mapUrl;
+                };
+
+                card.addEventListener('click', function (event) {
+                    if (event.target.closest('a') || event.target.closest('button')) {
+                        return;
+                    }
+                    openMap();
+                });
+
+                card.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openMap();
+                    }
+                });
+            });
+        }
+
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeUploadModal();
+                closeGalleryModal();
                 if (menuPanel && menuToggle) {
                     menuPanel.classList.remove('open');
                     menuPanel.setAttribute('aria-hidden', 'true');
