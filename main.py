@@ -59,7 +59,8 @@ async def index(request: Request):
     new_meta = metadata
     for i in range(len(metadata)):
         server = metadata[i]
-        new_meta[i]["image"] = random.choice(server["images"])
+        if len(server["images"]) != 0:
+            new_meta[i]["image"] = random.choice(server["images"])
 
     user = get_user(request) if session_secret else None
     return templates.TemplateResponse(
