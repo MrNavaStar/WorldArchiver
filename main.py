@@ -103,11 +103,13 @@ async def logout(request: Request):
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    if "tiles" in request.url.path and ".json" in request.url.path and "gz" not in request.url.path:
-        return FileResponse(
-            headers={"Content-Encoding": "gzip", "Content-Type": "application/json"},
-            path=f"{server_dir}/bluemap/web{request.url.path.replace('/map', '', 1)}.gz"
-        )
+    if request.url.path.startswith("/map/") and request.url.path.endswith(".json") and ".gz" not in request.url.path:
+        gz_path = f"{server_dir}/bluemap/web{request.url.path.replace('/map', '', 1)}.gz"
+        if os.path.exists(gz_path):
+            return FileResponse(
+                headers={"Content-Encoding": "gzip", "Content-Type": "application/json"},
+                path=gz_path
+            )
 
     response = await call_next(request)
     return response
