@@ -146,9 +146,10 @@ def getMetaData(dir: str):
                 try:
                     level_data = nbt.NBTFile(f"{dir}/{folder}/{sub.replace('.zip', '')}/level.dat", "rb")
                     data["version"] = level_data["Data"]["Version"]["Name"]
-                    data["world"] = f"{folder}/{sub}"
                 except Exception:
                     data["version"] = "unknown"
+                finally:
+                    data["world"] = f"{folder}/{sub}"
                     
         metaData.append(data)
     return metaData
