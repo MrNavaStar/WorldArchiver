@@ -143,10 +143,13 @@ def getMetaData(dir: str):
                         print(f"Extracting: {world.filename}")
                         world.extractall(f"{dir}/{folder}/{sub.replace('.zip', '')}")
 
-                level_data = nbt.NBTFile(f"{dir}/{folder}/{sub.replace('.zip', '')}/level.dat", "rb")
-                data["version"] = level_data["Data"]["Version"]["Name"]
-                data["world"] = f"{folder}/{sub}"
-
+                try:
+                    level_data = nbt.NBTFile(f"{dir}/{folder}/{sub.replace('.zip', '')}/level.dat", "rb")
+                    data["version"] = level_data["Data"]["Version"]["Name"]
+                    data["world"] = f"{folder}/{sub}"
+                except Exception:
+                    data["version"] = "unknown"
+                    
         metaData.append(data)
     return metaData
 
